@@ -4,3 +4,4 @@ export { Card, CardHeader, CardTitle, CardDescription, CardContent } from './Car
 export { Modal } from './Modal';
 export { default as NotificationCenter } from './NotificationCenter';
 export { default as WhatsAppSupport } from './WhatsAppSupport';
+export { Toast, useToast } from './toast';
