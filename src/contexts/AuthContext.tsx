@@ -10,6 +10,8 @@ interface User {
   email: string;
   role: 'ADMIN' | 'DENTISTA' | 'CONSULTOR';
   ativo: boolean;
+  telefone?: string;
+  cro?: string;
 }
 
 interface AuthContextType {
