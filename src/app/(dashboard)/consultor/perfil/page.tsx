@@ -1,38 +1,111 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Input, Button } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, Input, Button, useToast } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { phoneMask, croMask, removeNonNumeric } from '@/lib/masks';
 
 export default function PerfilPage() {
+  const { user, token } = useAuth();
+  const { showToast, ToastComponent } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    nome: 'Dr. Paulo Mendes',
-    email: 'paulo.mendes@email.com',
-    telefone: '(11) 98888-7777',
-    cro: 'CRO/SP 54321',
-    especialidade: 'Ortodontia',
-    cpf: '987.654.321-00',
-    endereco: 'Av. Consultor, 456',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    cep: '04567-890',
+    name: '',
+    email: '',
+    telefone: '',
+    cro: '',
   });
 
+  // Carregar dados do usuário quando o componente montar
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        telefone: user.telefone ? phoneMask(user.telefone) : '',
+        cro: user.cro || '',
+      });
+    }
+  }, [user]);
+
+  // Função para pegar as iniciais do nome
+  const getInitials = (name: string) => {
+    if (!name) return 'CO';
+    const names = name.trim().split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let maskedValue = value;
+
+    // Aplicar máscaras baseado no campo
+    switch (name) {
+      case 'telefone':
+        maskedValue = phoneMask(value);
+        break;
+      case 'cro':
+        maskedValue = croMask(value);
+        break;
+      default:
+        maskedValue = value;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: maskedValue,
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Salvando perfil:', formData);
-    setIsEditing(false);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          telefone: formData.telefone ? removeNonNumeric(formData.telefone) : '',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showToast(data.message || 'Erro ao atualizar perfil', 'error');
+        setIsLoading(false);
+        return;
+      }
+
+      showToast('Perfil atualizado com sucesso!', 'success');
+      setIsEditing(false);
+
+      // Atualizar os dados no localStorage
+      const updatedUser = { ...user, ...formData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Recarregar a página para atualizar o contexto
+      window.location.reload();
+    } catch (err) {
+      console.error('Erro ao atualizar perfil:', err);
+      showToast('Erro ao conectar com o servidor', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <ToastComponent />
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -54,18 +127,13 @@ export default function PerfilPage() {
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="w-24 h-24 bg-purple-100 rounded-full flex items-center justify-center text-3xl font-bold text-purple-600">
-              PM
+              {getInitials(formData.name)}
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="text-xl font-bold text-gray-900">{formData.nome}</h3>
-              <p className="text-gray-600">{formData.cro} - {formData.especialidade}</p>
+              <h3 className="text-xl font-bold text-gray-900">{formData.name || 'Carregando...'}</h3>
+              <p className="text-gray-600">{formData.cro || 'CRO não informado'}</p>
               <p className="text-sm text-gray-500 mt-1">{formData.email}</p>
             </div>
-            {isEditing && (
-              <Button variant="outline" size="sm">
-                Alterar Foto
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -80,11 +148,12 @@ export default function PerfilPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 type="text"
-                name="nome"
+                name="name"
                 label="Nome Completo"
-                value={formData.nome}
+                value={formData.name}
                 onChange={handleChange}
                 disabled={!isEditing}
+                required
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -98,7 +167,7 @@ export default function PerfilPage() {
                 label="E-mail"
                 value={formData.email}
                 onChange={handleChange}
-                disabled={!isEditing}
+                disabled={true}
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
@@ -119,20 +188,6 @@ export default function PerfilPage() {
                   </svg>
                 }
               />
-
-              <Input
-                type="text"
-                name="cpf"
-                label="CPF"
-                value={formData.cpf}
-                onChange={handleChange}
-                disabled={!isEditing}
-                icon={
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
-                  </svg>
-                }
-              />
             </div>
           </CardContent>
         </Card>
@@ -143,7 +198,7 @@ export default function PerfilPage() {
             <CardTitle>Informações Profissionais</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <Input
                 type="text"
                 name="cro"
@@ -156,74 +211,6 @@ export default function PerfilPage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 }
-              />
-
-              <Input
-                type="text"
-                name="especialidade"
-                label="Especialidade"
-                value={formData.especialidade}
-                onChange={handleChange}
-                disabled={!isEditing}
-                icon={
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                  </svg>
-                }
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Address */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Endereço</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Input
-                  type="text"
-                  name="endereco"
-                  label="Endereço"
-                  value={formData.endereco}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  }
-                />
-              </div>
-
-              <Input
-                type="text"
-                name="cidade"
-                label="Cidade"
-                value={formData.cidade}
-                onChange={handleChange}
-                disabled={!isEditing}
-              />
-
-              <Input
-                type="text"
-                name="estado"
-                label="Estado"
-                value={formData.estado}
-                onChange={handleChange}
-                disabled={!isEditing}
-              />
-
-              <Input
-                type="text"
-                name="cep"
-                label="CEP"
-                value={formData.cep}
-                onChange={handleChange}
-                disabled={!isEditing}
               />
             </div>
           </CardContent>
@@ -238,11 +225,12 @@ export default function PerfilPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setIsEditing(false)}
+                  disabled={isLoading}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" variant="primary">
-                  Salvar Alterações
+                <Button type="submit" variant="primary" isLoading={isLoading}>
+                  {isLoading ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
               </div>
             </CardContent>
@@ -275,45 +263,6 @@ export default function PerfilPage() {
                 <Button variant="outline" size="sm">
                   Ativar
                 </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Statistics */}
-      {!isEditing && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Estatísticas de Desempenho</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <svg className="w-12 h-12 text-blue-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                <p className="text-sm text-gray-600 mb-2">Total de Setups Analisados</p>
-                <p className="text-4xl font-bold text-blue-600 mb-1">156</p>
-                <p className="text-xs text-gray-500">Desde o início</p>
-              </div>
-
-              <div className="text-center p-6 bg-gradient-to-br from-green-50 to-green-100 rounded-lg border border-green-200">
-                <svg className="w-12 h-12 text-green-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-gray-600 mb-2">Taxa de Aprovação</p>
-                <p className="text-4xl font-bold text-green-600 mb-1">94%</p>
-                <p className="text-xs text-gray-500">148 de 156 aprovados</p>
-              </div>
-
-              <div className="text-center p-6 bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                <svg className="w-12 h-12 text-purple-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <p className="text-sm text-gray-600 mb-2">Ganhos Totais</p>
-                <p className="text-4xl font-bold text-purple-600 mb-1">R$ 54,6k</p>
-                <p className="text-xs text-gray-500">Receita acumulada</p>
               </div>
             </div>
           </CardContent>

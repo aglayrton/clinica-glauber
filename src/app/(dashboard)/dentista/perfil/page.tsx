@@ -1,37 +1,111 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, Input, Button } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { Card, CardHeader, CardTitle, CardContent, Input, Button, useToast } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
+import { phoneMask, croMask, removeNonNumeric } from '@/lib/masks';
 
 export default function PerfilPage() {
+  const { user, token } = useAuth();
+  const { showToast, ToastComponent } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    nome: 'Dr. Carlos Silva',
-    email: 'carlos.silva@email.com',
-    telefone: '(11) 98888-9999',
-    cro: 'CRO/SP 12345',
-    cpf: '123.456.789-00',
-    endereco: 'Rua Principal, 123',
-    cidade: 'São Paulo',
-    estado: 'SP',
-    cep: '01234-567',
+    name: '',
+    email: '',
+    telefone: '',
+    cro: '',
   });
 
+  // Carregar dados do usuário quando o componente montar
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        telefone: user.telefone ? phoneMask(user.telefone) : '',
+        cro: user.cro || '',
+      });
+    }
+  }, [user]);
+
+  // Função para pegar as iniciais do nome
+  const getInitials = (name: string) => {
+    if (!name) return 'DR';
+    const names = name.trim().split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    let maskedValue = value;
+
+    // Aplicar máscaras baseado no campo
+    switch (name) {
+      case 'telefone':
+        maskedValue = phoneMask(value);
+        break;
+      case 'cro':
+        maskedValue = croMask(value);
+        break;
+      default:
+        maskedValue = value;
+    }
+
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: maskedValue,
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Salvando perfil:', formData);
-    setIsEditing(false);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:3000/api/users/me', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          ...formData,
+          telefone: formData.telefone ? removeNonNumeric(formData.telefone) : '',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        showToast(data.message || 'Erro ao atualizar perfil', 'error');
+        setIsLoading(false);
+        return;
+      }
+
+      showToast('Perfil atualizado com sucesso!', 'success');
+      setIsEditing(false);
+
+      // Atualizar os dados no localStorage
+      const updatedUser = { ...user, ...formData };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Recarregar a página para atualizar o contexto
+      window.location.reload();
+    } catch (err) {
+      console.error('Erro ao atualizar perfil:', err);
+      showToast('Erro ao conectar com o servidor', 'error');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <ToastComponent />
       {/* Page Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -52,19 +126,14 @@ export default function PerfilPage() {
       <Card>
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-24 h-24 bg-primary-100 rounded-full flex items-center justify-center text-3xl font-bold text-primary-600">
-              CS
+            <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-3xl font-bold text-blue-600">
+              {getInitials(formData.name)}
             </div>
             <div className="flex-1 text-center sm:text-left">
-              <h3 className="text-xl font-bold text-gray-900">{formData.nome}</h3>
-              <p className="text-gray-600">{formData.cro}</p>
+              <h3 className="text-xl font-bold text-gray-900">{formData.name || 'Carregando...'}</h3>
+              <p className="text-gray-600">{formData.cro || 'CRO não informado'}</p>
               <p className="text-sm text-gray-500 mt-1">{formData.email}</p>
             </div>
-            {isEditing && (
-              <Button variant="outline" size="sm">
-                Alterar Foto
-              </Button>
-            )}
           </div>
         </CardContent>
       </Card>
@@ -79,11 +148,12 @@ export default function PerfilPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Input
                 type="text"
-                name="nome"
+                name="name"
                 label="Nome Completo"
-                value={formData.nome}
+                value={formData.name}
                 onChange={handleChange}
                 disabled={!isEditing}
+                required
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -97,7 +167,7 @@ export default function PerfilPage() {
                 label="E-mail"
                 value={formData.email}
                 onChange={handleChange}
-                disabled={!isEditing}
+                disabled={true}
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 12a4 4 0 10-8 0 4 4 0 008 0zm0 0v1.5a2.5 2.5 0 005 0V12a9 9 0 10-9 9m4.5-1.206a8.959 8.959 0 01-4.5 1.207" />
@@ -115,20 +185,6 @@ export default function PerfilPage() {
                 icon={
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                }
-              />
-
-              <Input
-                type="text"
-                name="cpf"
-                label="CPF"
-                value={formData.cpf}
-                onChange={handleChange}
-                disabled={!isEditing}
-                icon={
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
                   </svg>
                 }
               />
@@ -160,60 +216,6 @@ export default function PerfilPage() {
           </CardContent>
         </Card>
 
-        {/* Address */}
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Endereço</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="md:col-span-2">
-                <Input
-                  type="text"
-                  name="endereco"
-                  label="Endereço"
-                  value={formData.endereco}
-                  onChange={handleChange}
-                  disabled={!isEditing}
-                  icon={
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  }
-                />
-              </div>
-
-              <Input
-                type="text"
-                name="cidade"
-                label="Cidade"
-                value={formData.cidade}
-                onChange={handleChange}
-                disabled={!isEditing}
-              />
-
-              <Input
-                type="text"
-                name="estado"
-                label="Estado"
-                value={formData.estado}
-                onChange={handleChange}
-                disabled={!isEditing}
-              />
-
-              <Input
-                type="text"
-                name="cep"
-                label="CEP"
-                value={formData.cep}
-                onChange={handleChange}
-                disabled={!isEditing}
-              />
-            </div>
-          </CardContent>
-        </Card>
-
         {/* Actions */}
         {isEditing && (
           <Card className="mt-6">
@@ -223,11 +225,12 @@ export default function PerfilPage() {
                   type="button"
                   variant="outline"
                   onClick={() => setIsEditing(false)}
+                  disabled={isLoading}
                 >
                   Cancelar
                 </Button>
-                <Button type="submit" variant="primary">
-                  Salvar Alterações
+                <Button type="submit" variant="primary" isLoading={isLoading}>
+                  {isLoading ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
               </div>
             </CardContent>
