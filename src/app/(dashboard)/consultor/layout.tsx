@@ -3,17 +3,30 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ConsultorLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { logout, user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Desktop
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const pathname = usePathname();
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Função para pegar as iniciais do nome
+  const getInitials = (name: string) => {
+    if (!name) return 'CO';
+    const names = name.trim().split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   // Fechar dropdown de notificações ao clicar fora
   useEffect(() => {
@@ -72,7 +85,8 @@ export default function ConsultorLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ProtectedRoute allowedRoles={['CONSULTOR']}>
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 fixed w-full z-30">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -195,11 +209,11 @@ export default function ConsultorLayout({
               {/* User avatar */}
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block text-right">
-                  <p className="text-sm font-medium text-gray-900">Dr. Paulo Mendes</p>
-                  <p className="text-xs text-gray-500">Consultor Ortodôntico</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.name || 'Consultor'}</p>
+                  <p className="text-xs text-gray-500">{user?.cro || 'Consultor Ortodôntico'}</p>
                 </div>
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
-                  <span className="text-purple-700 font-medium">PM</span>
+                  <span className="text-purple-700 font-medium">{getInitials(user?.name || 'CO')}</span>
                 </div>
               </div>
             </div>
@@ -242,10 +256,10 @@ export default function ConsultorLayout({
           })}
 
           <div className="pt-4 mt-4 border-t border-gray-200">
-            <Link
-              href="/login"
+            <button
+              onClick={logout}
               className={`
-                flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all
                 ${isSidebarCollapsed ? 'lg:justify-center' : ''}
               `}
               title={isSidebarCollapsed ? 'Sair' : ''}
@@ -254,7 +268,7 @@ export default function ConsultorLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               <span className={`${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Sair</span>
-            </Link>
+            </button>
           </div>
         </nav>
       </aside>
@@ -291,5 +305,6 @@ export default function ConsultorLayout({
         </svg>
       </a>
     </div>
+    </ProtectedRoute>
   );
 }

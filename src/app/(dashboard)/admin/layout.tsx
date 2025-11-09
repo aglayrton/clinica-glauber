@@ -3,17 +3,30 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import ProtectedRoute from '@/components/ProtectedRoute';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { logout, user } = useAuth();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Mobile
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false); // Desktop
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const pathname = usePathname();
   const notificationsRef = useRef<HTMLDivElement>(null);
+
+  // Função para pegar as iniciais do nome
+  const getInitials = (name: string) => {
+    if (!name) return 'AD';
+    const names = name.trim().split(' ');
+    if (names.length >= 2) {
+      return (names[0][0] + names[names.length - 1][0]).toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
 
   // Fechar dropdown de notificações ao clicar fora
   useEffect(() => {
@@ -100,7 +113,8 @@ export default function AdminLayout({
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <ProtectedRoute allowedRoles={['ADMIN']}>
+      <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 fixed w-full z-30">
         <div className="px-4 sm:px-6 lg:px-8">
@@ -223,11 +237,11 @@ export default function AdminLayout({
               {/* User avatar */}
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block text-right">
-                  <p className="text-sm font-medium text-gray-900">Administrador</p>
-                  <p className="text-xs text-gray-500">Sistema Master</p>
+                  <p className="text-sm font-medium text-gray-900">{user?.name || 'Administrador'}</p>
+                  <p className="text-xs text-gray-500">Administrador do Sistema</p>
                 </div>
                 <div className="w-10 h-10 bg-red-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-medium">AD</span>
+                  <span className="text-white font-medium">{getInitials(user?.name || 'AD')}</span>
                 </div>
               </div>
             </div>
@@ -270,10 +284,10 @@ export default function AdminLayout({
           })}
 
           <div className="pt-4 mt-4 border-t border-gray-200">
-            <Link
-              href="/login"
+            <button
+              onClick={logout}
               className={`
-                flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all
+                w-full flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-all
                 ${isSidebarCollapsed ? 'lg:justify-center' : ''}
               `}
               title={isSidebarCollapsed ? 'Sair' : ''}
@@ -282,7 +296,7 @@ export default function AdminLayout({
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
               <span className={`${isSidebarCollapsed ? 'lg:hidden' : ''}`}>Sair</span>
-            </Link>
+            </button>
           </div>
         </nav>
       </aside>
@@ -319,5 +333,6 @@ export default function AdminLayout({
         </svg>
       </a>
     </div>
+    </ProtectedRoute>
   );
 }

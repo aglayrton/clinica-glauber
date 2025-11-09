@@ -3,25 +3,30 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function LoginPage() {
+  const { login } = useAuth();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+    setError('');
 
-    // Simular login
-    setTimeout(() => {
-      console.log('Login:', formData);
+    try {
+      await login(formData.email, formData.password);
+      // Redirecionamento é feito automaticamente pelo login
+    } catch (err: any) {
+      console.error('Erro ao fazer login:', err);
+      setError(err.message || 'Email ou senha inválidos');
       setIsLoading(false);
-      // Redirecionar para dashboard após login
-      window.location.href = '/dashboard';
-    }, 1500);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -51,6 +56,24 @@ export default function LoginPage() {
 
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Mensagem de erro */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg flex items-center gap-2">
+                  <svg
+                    className="w-5 h-5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-sm font-medium">{error}</span>
+                </div>
+              )}
+
               <Input
                 type="email"
                 name="email"
