@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent, useToast } from '@/components/ui';
 import { phoneMask, croMask, removeNonNumeric } from '@/lib/masks';
+import { API_ENDPOINTS } from '@/lib/api';
 
 export default function CadastroPage() {
   const router = useRouter();
@@ -61,7 +62,7 @@ export default function CadastroPage() {
 
     try {
       // Fazer requisição para a API
-      const response = await fetch('http://localhost:3000/api/auth/register', {
+      const response = await fetch(API_ENDPOINTS.auth.register, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

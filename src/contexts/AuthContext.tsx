@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { API_ENDPOINTS } from '@/lib/api';
 
 interface User {
   id: number;
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
 
       // Validar token com a API
-      const response = await fetch('http://localhost:3000/api/auth/validate', {
+      const response = await fetch(API_ENDPOINTS.auth.validate, {
         headers: {
           'Authorization': `Bearer ${storedToken}`,
         },
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(API_ENDPOINTS.auth.login, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Modal, useToast } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { cpfMask, phoneMask, cepMask, removeNonNumeric } from '@/lib/masks';
+import { API_ENDPOINTS } from '@/lib/api';
 
 interface Paciente {
   id: number;
@@ -97,7 +98,7 @@ export default function PacientesPage() {
 
   const loadClinicas = async () => {
     try {
-      const response = await fetch('http://localhost:3000/api/clinicas', {
+      const response = await fetch(API_ENDPOINTS.clinicas, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -115,7 +116,7 @@ export default function PacientesPage() {
   const loadPacientes = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/pacientes', {
+      const response = await fetch(API_ENDPOINTS.pacientes, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -200,7 +201,7 @@ export default function PacientesPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/pacientes', {
+      const response = await fetch(API_ENDPOINTS.pacientes, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -309,7 +310,7 @@ export default function PacientesPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/pacientes/${selectedPaciente.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.pacientes}/${selectedPaciente.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -378,7 +379,7 @@ export default function PacientesPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/pacientes/${selectedPaciente.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.pacientes}/${selectedPaciente.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

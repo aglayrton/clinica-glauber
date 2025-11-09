@@ -210,7 +210,7 @@ export default function ConsultorLayout({
               <div className="flex items-center gap-3">
                 <div className="hidden sm:block text-right">
                   <p className="text-sm font-medium text-gray-900">{user?.name || 'Consultor'}</p>
-                  <p className="text-xs text-gray-500">{user?.cro || 'Consultor Ortodôntico'}</p>
+                  <p className="text-xs text-gray-500">Consultor Ortodôntico</p>
                 </div>
                 <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
                   <span className="text-purple-700 font-medium">{getInitials(user?.name || 'CO')}</span>

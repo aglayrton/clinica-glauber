@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, Input, Button, useToast } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { phoneMask, croMask, removeNonNumeric } from '@/lib/masks';
+import { API_ENDPOINTS } from '@/lib/api';
 
 export default function PerfilPage() {
   const { user, token } = useAuth();
@@ -66,7 +67,7 @@ export default function PerfilPage() {
     setIsLoading(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/users/me', {
+      const response = await fetch(API_ENDPOINTS.users.me, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

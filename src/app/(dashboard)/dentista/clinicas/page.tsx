@@ -5,6 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent, Button, Input, useToast } fro
 import { Modal } from '@/components/ui/Modal';
 import { useAuth } from '@/contexts/AuthContext';
 import { cnpjMask, phoneMask, cepMask, removeNonNumeric } from '@/lib/masks';
+import { API_ENDPOINTS } from '@/lib/api';
 
 interface Clinica {
   id: number;
@@ -71,7 +72,7 @@ export default function ClinicasPage() {
   const loadClinicas = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/clinicas', {
+      const response = await fetch(API_ENDPOINTS.clinicas, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -151,7 +152,7 @@ export default function ClinicasPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch('http://localhost:3000/api/clinicas', {
+      const response = await fetch(API_ENDPOINTS.clinicas, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -254,7 +255,7 @@ export default function ClinicasPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/clinicas/${selectedClinica.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.clinicas}/${selectedClinica.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -319,7 +320,7 @@ export default function ClinicasPage() {
     setIsSaving(true);
 
     try {
-      const response = await fetch(`http://localhost:3000/api/clinicas/${selectedClinica.id}`, {
+      const response = await fetch(`${API_ENDPOINTS.clinicas}/${selectedClinica.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
