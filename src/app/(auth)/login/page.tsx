@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Input, Button, Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -37,12 +38,17 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-blue-50 to-primary-100 px-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-blue-50 to-primary-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 px-4 py-8 relative">
+      {/* Theme Toggle - Canto Superior Direito */}
+      <div className="absolute top-6 right-6">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md">
         {/* Logo / Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Sistema Odontológico</h1>
-          <p className="text-gray-600 mt-2">Gestão inteligente para sua clínica</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Sistema Odontológico</h1>
+          <p className="text-gray-600 dark:text-gray-300 mt-2">Gestão inteligente para sua clínica</p>
         </div>
 
         {/* Card de Login */}
@@ -166,7 +172,7 @@ export default function LoginPage() {
         </Card>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-600">
+        <div className="mt-8 text-center text-sm text-gray-600 dark:text-gray-400">
           <p>© 2025 Sistema Odontológico. Todos os direitos reservados.</p>
         </div>
       </div>

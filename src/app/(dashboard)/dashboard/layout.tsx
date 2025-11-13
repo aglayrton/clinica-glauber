@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function DashboardLayout({
   children,
@@ -134,6 +135,9 @@ export default function DashboardLayout({
 
             {/* User menu */}
             <div className="flex items-center gap-4">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
               {/* Notifications */}
               <div className="relative" ref={notificationsRef}>
                 <button
