@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Modal } from '@/components/ui';
 
 interface Paciente {
@@ -17,6 +18,7 @@ interface Paciente {
 }
 
 export default function PacientesPage() {
+  const router = useRouter();
   const [searchTerm, setSearchTerm] = useState('');
   const [pacientes, setPacientes] = useState<Paciente[]>([
     { id: 1, name: 'Maria Silva', age: 34, clinic: 'Clínica Central', phone: '(11) 98888-1111', lastVisit: '2025-11-02' },
@@ -100,7 +102,7 @@ export default function PacientesPage() {
           <h1 className="text-3xl font-bold text-gray-900">Pacientes</h1>
           <p className="text-gray-600 mt-2">Gerencie seus pacientes cadastrados</p>
         </div>
-        <Button variant="primary" onClick={() => setIsModalOpen(true)}>
+        <Button variant="primary" onClick={() => router.push('/dashboard/pacientes/novo')}>
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>

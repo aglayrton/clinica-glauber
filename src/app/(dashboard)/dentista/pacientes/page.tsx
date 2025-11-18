@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardHeader, CardTitle, CardContent, Button, Input, Modal, useToast } from '@/components/ui';
 import { useAuth } from '@/contexts/AuthContext';
 import { cpfMask, phoneMask, cepMask, removeNonNumeric } from '@/lib/masks';
@@ -407,12 +408,14 @@ export default function PacientesPage() {
     }
   };
 
+  const router = useRouter();
+
   const handleNewPatient = () => {
     if (clinicas.length === 0) {
       showToast('Você precisa cadastrar pelo menos uma clínica antes de adicionar pacientes', 'warning');
       return;
     }
-    setIsModalOpen(true);
+    router.push('/dentista/pacientes/novo');
   };
 
   // Filter and paginate patients with useMemo for reactivity
