@@ -197,7 +197,7 @@ export default function CadastroPage() {
                     type="text"
                     name="cro"
                     label="CRO"
-                    placeholder="CRO/SP 12345"
+                    placeholder="CRO/CE/12345"
                     value={formData.cro}
                     onChange={handleChange}
                     error={errors.cro}
@@ -250,7 +250,7 @@ export default function CadastroPage() {
                     type="tel"
                     name="telefone"
                     label="Telefone"
-                    placeholder="(11) 98765-4321"
+                    placeholder="(85) 99213-1997"
                     value={formData.telefone}
                     onChange={handleChange}
                     error={errors.telefone}
