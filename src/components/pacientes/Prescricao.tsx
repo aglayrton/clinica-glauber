@@ -15,14 +15,19 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
   const [showOverbiteSubOptions, setShowOverbiteSubOptions] = useState(false);
   const [showRelacaoSagitalDireitaOptions, setShowRelacaoSagitalDireitaOptions] = useState(false);
   const [showRelacaoSagitalEsquerdaOptions, setShowRelacaoSagitalEsquerdaOptions] = useState(false);
-  const [showRelacaoSagitalMetodo, setShowRelacaoSagitalMetodo] = useState(false);
+  const [showRelacaoSagitalMetodoDireita, setShowRelacaoSagitalMetodoDireita] = useState(false);
+  const [showRelacaoSagitalMetodoEsquerda, setShowRelacaoSagitalMetodoEsquerda] = useState(false);
 
-  const toggleMultipleSelection = (field: string, value: string) => {
-    const current = formData[field] || [];
-    const updated = current.includes(value)
-      ? current.filter((v: string) => v !== value)
-      : [...current, value];
-    onChange(field, updated);
+  // Função para desmarcar opção ao clicar novamente
+  const handleOptionClick = (field: string, value: string, closeDropdown: () => void) => {
+    if (formData[field] === value) {
+      // Se já está selecionado, desmarca
+      onChange(field, null);
+    } else {
+      // Se não está selecionado, marca
+      onChange(field, value);
+    }
+    closeDropdown();
   };
 
   return (
@@ -44,10 +49,7 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => {
-                  setShowCorrecaoEspacosMaxilar(!showCorrecaoEspacosMaxilar);
-                  if (!showCorrecaoEspacosMaxilar) onChange('correcaoEspacosMaxilar', null);
-                }}
+                onClick={() => setShowCorrecaoEspacosMaxilar(!showCorrecaoEspacosMaxilar)}
                 className="w-full px-4 py-3 text-left rounded-lg border-2 border-gray-300 hover:border-blue-400 transition-all flex items-center justify-between"
               >
                 <span>{formData.correcaoEspacosMaxilar || 'Selecionar opção'}</span>
@@ -62,10 +64,7 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => {
-                        onChange('correcaoEspacosMaxilar', opt);
-                        setShowCorrecaoEspacosMaxilar(false);
-                      }}
+                      onClick={() => handleOptionClick('correcaoEspacosMaxilar', opt, () => setShowCorrecaoEspacosMaxilar(false))}
                       className={`w-full px-4 py-2 text-left rounded-lg border transition-all ${
                         formData.correcaoEspacosMaxilar === opt
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -88,10 +87,7 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
             <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => {
-                  setShowCorrecaoEspacosMandibular(!showCorrecaoEspacosMandibular);
-                  if (!showCorrecaoEspacosMandibular) onChange('correcaoEspacosMandibular', null);
-                }}
+                onClick={() => setShowCorrecaoEspacosMandibular(!showCorrecaoEspacosMandibular)}
                 className="w-full px-4 py-3 text-left rounded-lg border-2 border-gray-300 hover:border-blue-400 transition-all flex items-center justify-between"
               >
                 <span>{formData.correcaoEspacosMandibular || 'Selecionar opção'}</span>
@@ -106,10 +102,7 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => {
-                        onChange('correcaoEspacosMandibular', opt);
-                        setShowCorrecaoEspacosMandibular(false);
-                      }}
+                      onClick={() => handleOptionClick('correcaoEspacosMandibular', opt, () => setShowCorrecaoEspacosMandibular(false))}
                       className={`w-full px-4 py-2 text-left rounded-lg border transition-all ${
                         formData.correcaoEspacosMandibular === opt
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -147,10 +140,7 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => {
-                        onChange('overjet', opt);
-                        setShowOverjetOptions(false);
-                      }}
+                      onClick={() => handleOptionClick('overjet', opt, () => setShowOverjetOptions(false))}
                       className={`w-full px-4 py-2 text-left rounded-lg border transition-all ${
                         formData.overjet === opt
                           ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -189,12 +179,12 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                       key={opt}
                       type="button"
                       onClick={() => {
-                        onChange('overbite', opt);
-                        setShowOverbiteOptions(false);
-                        if (opt === 'Corrigir mordida aberta') {
+                        handleOptionClick('overbite', opt, () => setShowOverbiteOptions(false));
+                        if (opt === 'Corrigir mordida aberta' || opt === 'Corrigir mordida profunda') {
                           setShowOverbiteSubOptions(true);
                         } else {
                           setShowOverbiteSubOptions(false);
+                          onChange('overbiteMetodo', null);
                         }
                       }}
                       className={`w-full px-4 py-2 text-left rounded-lg border transition-all ${
@@ -209,8 +199,8 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                 </div>
               )}
 
-              {/* Sub-opções para Corrigir mordida aberta */}
-              {showOverbiteSubOptions && formData.overbite === 'Corrigir mordida aberta' && (
+              {/* Sub-opções para Corrigir mordida aberta OU profunda */}
+              {showOverbiteSubOptions && (formData.overbite === 'Corrigir mordida aberta' || formData.overbite === 'Corrigir mordida profunda') && (
                 <div className="ml-8 mt-2 space-y-2 border-l-2 border-green-200 pl-4">
                   <p className="text-sm font-medium text-gray-700 mb-2">Método:</p>
                   {[
@@ -222,7 +212,13 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                     <button
                       key={opt}
                       type="button"
-                      onClick={() => onChange('overbiteMetodo', opt)}
+                      onClick={() => {
+                        if (formData.overbiteMetodo === opt) {
+                          onChange('overbiteMetodo', null);
+                        } else {
+                          onChange('overbiteMetodo', opt);
+                        }
+                      }}
                       className={`w-full px-4 py-2 text-sm text-left rounded-lg border transition-all ${
                         formData.overbiteMetodo === opt
                           ? 'border-green-500 bg-green-50 text-green-700'
@@ -265,12 +261,12 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                           key={opt}
                           type="button"
                           onClick={() => {
-                            onChange('relacaoSagitalDireita', opt);
-                            setShowRelacaoSagitalDireitaOptions(false);
+                            handleOptionClick('relacaoSagitalDireita', opt, () => setShowRelacaoSagitalDireitaOptions(false));
                             if (opt === 'Melhorar apenas a Relação Canina') {
-                              setShowRelacaoSagitalMetodo(true);
+                              setShowRelacaoSagitalMetodoDireita(true);
                             } else {
-                              setShowRelacaoSagitalMetodo(false);
+                              setShowRelacaoSagitalMetodoDireita(false);
+                              onChange('relacaoSagitalMetodoDireita', null);
                             }
                           }}
                           className={`w-full px-3 py-2 text-sm text-left rounded-lg border transition-all ${
@@ -285,8 +281,8 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                     </div>
                   )}
 
-                  {/* Método para Melhorar apenas a Relação Canina */}
-                  {showRelacaoSagitalMetodo && formData.relacaoSagitalDireita === 'Melhorar apenas a Relação Canina' && (
+                  {/* Método para Melhorar apenas a Relação Canina - DIREITA */}
+                  {showRelacaoSagitalMetodoDireita && formData.relacaoSagitalDireita === 'Melhorar apenas a Relação Canina' && (
                     <div className="ml-8 mt-2 space-y-2 border-l-2 border-green-200 pl-4">
                       <p className="text-xs font-medium text-gray-700 mb-2">Método:</p>
                       {[
@@ -298,23 +294,27 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                         <div key={opt}>
                           <button
                             type="button"
-                            onClick={() => onChange('relacaoSagitalMetodo', opt)}
+                            onClick={() => {
+                              if (formData.relacaoSagitalMetodoDireita === opt) {
+                                onChange('relacaoSagitalMetodoDireita', null);
+                              } else {
+                                onChange('relacaoSagitalMetodoDireita', opt);
+                              }
+                            }}
                             className={`w-full px-3 py-2 text-xs text-left rounded-lg border transition-all ${
-                              formData.relacaoSagitalMetodo === opt
+                              formData.relacaoSagitalMetodoDireita === opt
                                 ? 'border-green-500 bg-green-50 text-green-700'
                                 : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
                             }`}
                           >
                             {opt}
                           </button>
-                          {/* Nota explicativa para Distalização Molar */}
-                          {opt === 'Distalização Molar (serão necessários elásticos intermaxilares/intramaxilares)' && formData.relacaoSagitalMetodo === opt && (
+                          {opt === 'Distalização Molar (serão necessários elásticos intermaxilares/intramaxilares)' && formData.relacaoSagitalMetodoDireita === opt && (
                             <p className="mt-1 ml-2 text-xs text-gray-500 italic">
                               A escolha da distalização molar aqui requer escolha da distalização molar também na parte "Correção de apinhamento".
                             </p>
                           )}
-                          {/* Nota para Extração */}
-                          {opt === 'Extração' && formData.relacaoSagitalMetodo === opt && (
+                          {opt === 'Extração' && formData.relacaoSagitalMetodoDireita === opt && (
                             <p className="mt-1 ml-2 text-xs text-gray-500 italic">
                               Escolher extração aqui requer que se escolha também a extração na parte "Correção de apinhamento".
                             </p>
@@ -348,8 +348,13 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                           key={opt}
                           type="button"
                           onClick={() => {
-                            onChange('relacaoSagitalEsquerda', opt);
-                            setShowRelacaoSagitalEsquerdaOptions(false);
+                            handleOptionClick('relacaoSagitalEsquerda', opt, () => setShowRelacaoSagitalEsquerdaOptions(false));
+                            if (opt === 'Melhorar apenas a Relação Canina') {
+                              setShowRelacaoSagitalMetodoEsquerda(true);
+                            } else {
+                              setShowRelacaoSagitalMetodoEsquerda(false);
+                              onChange('relacaoSagitalMetodoEsquerda', null);
+                            }
                           }}
                           className={`w-full px-3 py-2 text-sm text-left rounded-lg border transition-all ${
                             formData.relacaoSagitalEsquerda === opt
@@ -359,6 +364,49 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
                         >
                           {opt}
                         </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Método para Melhorar apenas a Relação Canina - ESQUERDA */}
+                  {showRelacaoSagitalMetodoEsquerda && formData.relacaoSagitalEsquerda === 'Melhorar apenas a Relação Canina' && (
+                    <div className="ml-8 mt-2 space-y-2 border-l-2 border-green-200 pl-4">
+                      <p className="text-xs font-medium text-gray-700 mb-2">Método:</p>
+                      {[
+                        'IPR',
+                        'Distalização Molar (serão necessários elásticos intermaxilares/intramaxilares)',
+                        'Salto de mordida',
+                        'Extração'
+                      ].map((opt) => (
+                        <div key={opt}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (formData.relacaoSagitalMetodoEsquerda === opt) {
+                                onChange('relacaoSagitalMetodoEsquerda', null);
+                              } else {
+                                onChange('relacaoSagitalMetodoEsquerda', opt);
+                              }
+                            }}
+                            className={`w-full px-3 py-2 text-xs text-left rounded-lg border transition-all ${
+                              formData.relacaoSagitalMetodoEsquerda === opt
+                                ? 'border-green-500 bg-green-50 text-green-700'
+                                : 'border-gray-200 hover:border-green-300 hover:bg-green-50'
+                            }`}
+                          >
+                            {opt}
+                          </button>
+                          {opt === 'Distalização Molar (serão necessários elásticos intermaxilares/intramaxilares)' && formData.relacaoSagitalMetodoEsquerda === opt && (
+                            <p className="mt-1 ml-2 text-xs text-gray-500 italic">
+                              A escolha da distalização molar aqui requer escolha da distalização molar também na parte "Correção de apinhamento".
+                            </p>
+                          )}
+                          {opt === 'Extração' && formData.relacaoSagitalMetodoEsquerda === opt && (
+                            <p className="mt-1 ml-2 text-xs text-gray-500 italic">
+                              Escolher extração aqui requer que se escolha também a extração na parte "Correção de apinhamento".
+                            </p>
+                          )}
+                        </div>
                       ))}
                     </div>
                   )}
@@ -378,7 +426,13 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
             <div className="flex gap-4">
               <button
                 type="button"
-                onClick={() => onChange('arcada', 'Dupla')}
+                onClick={() => {
+                  if (formData.arcada === 'Dupla') {
+                    onChange('arcada', null);
+                  } else {
+                    onChange('arcada', 'Dupla');
+                  }
+                }}
                 className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
                   formData.arcada === 'Dupla'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -389,7 +443,13 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
               </button>
               <button
                 type="button"
-                onClick={() => onChange('arcada', 'Maxilar')}
+                onClick={() => {
+                  if (formData.arcada === 'Maxilar') {
+                    onChange('arcada', null);
+                  } else {
+                    onChange('arcada', 'Maxilar');
+                  }
+                }}
                 className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
                   formData.arcada === 'Maxilar'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
@@ -400,7 +460,13 @@ export function Prescricao({ formData, onChange }: PrescricaoProps) {
               </button>
               <button
                 type="button"
-                onClick={() => onChange('arcada', 'Mandibular')}
+                onClick={() => {
+                  if (formData.arcada === 'Mandibular') {
+                    onChange('arcada', null);
+                  } else {
+                    onChange('arcada', 'Mandibular');
+                  }
+                }}
                 className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${
                   formData.arcada === 'Mandibular'
                     ? 'border-blue-500 bg-blue-50 text-blue-700'
